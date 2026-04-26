@@ -32,33 +32,24 @@ public class ProductCommandsHandler {
   }
 
   @KafkaHandler
-  public void handleCommand(@Payload ReserveProductCommand reserveProductCommand) {
+  public void handleCommand(@Payload ReserveProductCommand command) {
 
     try {
-      Product reservedProduct =
-          new Product(
-              reserveProductCommand.getProductId(), reserveProductCommand.getProductQuantity());
-      productService.reserve(reservedProduct, reserveProductCommand.getOrderId());
-
+      Product desiredProduct = new Product(command.getProductId(), command.getProductQuantity());
+      Product reservedProduct = productService.reserve(desiredProduct, command.getOrderId());
       ProductReservedEvent productReservedEvent =
           new ProductReservedEvent(
-              reserveProductCommand.getOrderId(),
-              reserveProductCommand.getProductId(),
+              command.getOrderId(),
+              command.getProductId(),
               reservedProduct.getPrice(),
-              reserveProductCommand.getProductQuantity());
+              command.getProductQuantity());
       kafkaTemplate.send(productEventsTopicName, productReservedEvent);
     } catch (Exception e) {
-      logger.error(
-          "Failed to reserve product with id {} for order with id {}. Reason: {}",
-          reserveProductCommand.getProductId(),
-          reserveProductCommand.getOrderId(),
-          e.getMessage());
+      logger.error(e.getLocalizedMessage(), e);
+      ProductReservationFailedEvent productReservationFailedEvent =
+          new ProductReservationFailedEvent(
+              command.getProductId(), command.getOrderId(), command.getProductQuantity());
+      kafkaTemplate.send(productEventsTopicName, productReservationFailedEvent);
     }
-    ProductReservationFailedEvent productReservationFailedEvent =
-        new ProductReservationFailedEvent(
-            reserveProductCommand.getOrderId(),
-            reserveProductCommand.getProductId(),
-            reserveProductCommand.getProductQuantity());
-    kafkaTemplate.send(productEventsTopicName, productReservationFailedEvent);
   }
 }

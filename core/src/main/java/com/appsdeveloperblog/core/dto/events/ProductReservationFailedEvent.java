@@ -5,22 +5,22 @@ import java.util.UUID;
 public class ProductReservationFailedEvent {
   private UUID productId;
   private UUID orderId;
-  private Integer quantity;
+  private Integer productQuantity;
 
   public ProductReservationFailedEvent() {}
 
-  public ProductReservationFailedEvent(UUID productId, UUID orderId, Integer quantity) {
+  public ProductReservationFailedEvent(UUID productId, UUID orderId, Integer productQuantity) {
     this.productId = productId;
     this.orderId = orderId;
-    this.quantity = quantity;
+    this.productQuantity = productQuantity;
   }
 
-  public Integer getQuantity() {
-    return quantity;
+  public Integer getProductQuantity() {
+    return productQuantity;
   }
 
-  public void setQuantity(Integer quantity) {
-    this.quantity = quantity;
+  public void setProductQuantity(Integer productQuantity) {
+    this.productQuantity = productQuantity;
   }
 
   public UUID getOrderId() {
