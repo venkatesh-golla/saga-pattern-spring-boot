@@ -43,14 +43,28 @@ public class PaymentsCommandsHandler {
               processPaymentCommand.getProductId(),
               processPaymentCommand.getProductPrice(),
               processPaymentCommand.getProductQuantity());
+      logger.info("Processing payment for order with id {}", processPaymentCommand.getOrderId());
       paymentService.process(payment);
+      logger.info("Processed Payment for order with id {}", processPaymentCommand.getOrderId());
 
       PaymentProcessedEvent paymentProcessedEvent =
           new PaymentProcessedEvent(payment.getOrderId(), payment.getId());
+      logger.info(
+          "Sending paymentProcessedEvent for order with id {}, paymentId {}",
+          paymentProcessedEvent.getOrderId(),
+          paymentProcessedEvent.getPaymentId());
       kafkaTemplate.send(paymentsEventsTopicName, paymentProcessedEvent);
+      logger.info(
+          "Sent paymentProcessedEvent for order with id {}, paymentId {}",
+          paymentProcessedEvent.getOrderId(),
+          paymentProcessedEvent.getPaymentId());
 
     } catch (CreditCardProcessorUnavailableException e) {
-      logger.error(e.getLocalizedMessage(), e);
+      logger.error(
+          "Credit card processor is unavailable for order with id {}: {}",
+          processPaymentCommand.getOrderId(),
+          e.getLocalizedMessage(),
+          e);
       PaymentFailedEvent paymentFailedEvent =
           new PaymentFailedEvent(
               processPaymentCommand.getOrderId(),

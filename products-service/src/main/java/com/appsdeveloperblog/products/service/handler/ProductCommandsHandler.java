@@ -43,12 +43,20 @@ public class ProductCommandsHandler {
               command.getProductId(),
               reservedProduct.getPrice(),
               command.getProductQuantity());
+      logger.info("Product is being reserved for order with id {}", command.getOrderId());
       kafkaTemplate.send(productEventsTopicName, productReservedEvent);
+      logger.info("Product reserved for order with id {}", command.getOrderId());
     } catch (Exception e) {
-      logger.error(e.getLocalizedMessage(), e);
+      logger.error(
+          "Error reserving product for order with id {}: {}",
+          command.getOrderId(),
+          e.getLocalizedMessage(),
+          e);
+
       ProductReservationFailedEvent productReservationFailedEvent =
           new ProductReservationFailedEvent(
               command.getProductId(), command.getOrderId(), command.getProductQuantity());
+      logger.info("Product reservation failed for order with id " + command.getOrderId());
       kafkaTemplate.send(productEventsTopicName, productReservationFailedEvent);
     }
   }

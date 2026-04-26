@@ -35,7 +35,7 @@ public class OrderSaga {
       OrderHistoryService orderHistoryService,
       @Value("${products.commands.topic.name}") String productsCommandTopicName,
       @Value("${payments.commands.topic.name}") String paymentsCommandTopicName,
-      @Value("${orders.commands.topic.name") String orderCommandsTopicName) {
+      @Value("${orders.commands.topic.name}") String orderCommandsTopicName) {
     this.kafkaTemplate = kafkaTemplate;
     this.orderHistoryService = orderHistoryService;
     this.productsCommandTopicName = productsCommandTopicName;
@@ -94,11 +94,34 @@ public class OrderSaga {
   public void handleEvent(@Payload PaymentProcessedEvent paymentProcessedEvent) {
     ApprovedOrderCommand approvedOrderCommand =
         new ApprovedOrderCommand(paymentProcessedEvent.getOrderId());
-    kafkaTemplate.send(orderCommandsTopicName, approvedOrderCommand);
+    try {
+      log.info("Sending ApprovedOrderCommand for orderId: {}", approvedOrderCommand.getOrderId());
+      kafkaTemplate.send(orderCommandsTopicName, approvedOrderCommand);
+      log.info("ApprovedOrderCommand sent for orderId: {}", approvedOrderCommand.getOrderId());
+    } catch (Exception e) {
+      log.error(
+          "Failed to send ApprovedOrderCommand for orderId: {}. Error: {}",
+          approvedOrderCommand.getOrderId(),
+          e.getMessage(),
+          e);
+      throw new RuntimeException(e);
+    }
   }
 
   @KafkaHandler
   public void handleEvent(@Payload OrderApprovedEvent orderApprovedEvent) {
-    orderHistoryService.add(orderApprovedEvent.getOrderId(), OrderStatus.APPROVED);
+    try {
+      log.info("Received OrderApprovedEvent for orderId: {}", orderApprovedEvent.getOrderId());
+      orderHistoryService.add(orderApprovedEvent.getOrderId(), OrderStatus.APPROVED);
+      log.info(
+          "Order history updated to APPROVED for orderId: {}", orderApprovedEvent.getOrderId());
+    } catch (Exception e) {
+      log.error(
+          "Failed to update order history for orderId: {}. Error: {}",
+          orderApprovedEvent.getOrderId(),
+          e.getMessage(),
+          e);
+      throw new RuntimeException(e);
+    }
   }
 }
