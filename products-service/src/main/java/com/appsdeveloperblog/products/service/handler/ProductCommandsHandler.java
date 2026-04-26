@@ -25,7 +25,7 @@ public class ProductCommandsHandler {
   public ProductCommandsHandler(
       ProductService productService,
       KafkaTemplate<String, Object> kafkaTemplate,
-      @Value("products.events.topic.name") String productEventsTopicName) {
+      @Value("${products.events.topic.name}") String productEventsTopicName) {
     this.productService = productService;
     this.kafkaTemplate = kafkaTemplate;
     this.productEventsTopicName = productEventsTopicName;
