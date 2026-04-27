@@ -1,6 +1,8 @@
 package com.appsdeveloperblog.products.service.handler;
 
 import com.appsdeveloperblog.core.dto.Product;
+import com.appsdeveloperblog.core.dto.commands.CancelProductReservationCommand;
+import com.appsdeveloperblog.core.dto.commands.ProductReservationCancelledEvent;
 import com.appsdeveloperblog.core.dto.commands.ReserveProductCommand;
 import com.appsdeveloperblog.core.dto.events.ProductReservationFailedEvent;
 import com.appsdeveloperblog.core.dto.events.ProductReservedEvent;
@@ -59,5 +61,16 @@ public class ProductCommandsHandler {
       logger.info("Product reservation failed for order with id " + command.getOrderId());
       kafkaTemplate.send(productEventsTopicName, productReservationFailedEvent);
     }
+  }
+
+  @KafkaHandler
+  public void handleCommand(@Payload CancelProductReservationCommand command) {
+    Product productToCancel = new Product(command.getProductId(), command.getProductQuantity());
+    logger.info("Canceling product reservation for order with id {}", command.getOrderId());
+    productService.cancelReservation(productToCancel, command.getOrderId());
+
+    ProductReservationCancelledEvent event =
+        new ProductReservationCancelledEvent(command.getProductId(), command.getOrderId());
+    kafkaTemplate.send(productEventsTopicName, event);
   }
 }

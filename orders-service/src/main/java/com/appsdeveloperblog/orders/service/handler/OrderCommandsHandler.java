@@ -1,6 +1,7 @@
 package com.appsdeveloperblog.orders.service.handler;
 
 import com.appsdeveloperblog.core.dto.commands.ApprovedOrderCommand;
+import com.appsdeveloperblog.core.dto.commands.RejectOrderCommand;
 import com.appsdeveloperblog.orders.service.OrderService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,6 +29,19 @@ public class OrderCommandsHandler {
     } catch (Exception e) {
       logger.info(
           "Error approving order with id {}: {}", command.getOrderId(), e.getLocalizedMessage(), e);
+      throw new RuntimeException(e);
+    }
+  }
+
+  @KafkaHandler
+  public void handleCommand(@Payload RejectOrderCommand command) {
+    try {
+      logger.info("Received RejectOrderCommand for order with id {}", command.getOrderId());
+      orderService.rejectOrder(command.getOrderId());
+      logger.info("Order rejected for order with id {}", command.getOrderId());
+    } catch (Exception e) {
+      logger.info(
+          "Error rejecting order with id {}: {}", command.getOrderId(), e.getLocalizedMessage(), e);
       throw new RuntimeException(e);
     }
   }

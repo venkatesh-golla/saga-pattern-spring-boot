@@ -27,7 +27,7 @@ public class CreditCardProcessorRemoteServiceImpl implements CreditCardProcessor
       var request = new CreditCardProcessRequest(cardNumber, paymentAmount);
       restTemplate.postForObject(
           ccpRemoteServiceUrl + "/ccp/process", request, CreditCardProcessRequest.class);
-    } catch (ResourceAccessException e) {
+    } catch (Exception e) {
       throw new CreditCardProcessorUnavailableException(e);
     }
   }

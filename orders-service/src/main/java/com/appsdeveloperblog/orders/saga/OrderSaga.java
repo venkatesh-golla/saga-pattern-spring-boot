@@ -1,8 +1,6 @@
 package com.appsdeveloperblog.orders.saga;
 
-import com.appsdeveloperblog.core.dto.commands.ApprovedOrderCommand;
-import com.appsdeveloperblog.core.dto.commands.ProcessPaymentCommand;
-import com.appsdeveloperblog.core.dto.commands.ReserveProductCommand;
+import com.appsdeveloperblog.core.dto.commands.*;
 import com.appsdeveloperblog.core.dto.events.*;
 import com.appsdeveloperblog.core.types.OrderStatus;
 import com.appsdeveloperblog.orders.service.OrderHistoryService;
@@ -123,5 +121,43 @@ public class OrderSaga {
           e);
       throw new RuntimeException(e);
     }
+  }
+
+  @KafkaHandler
+  public void handleEvent(@Payload PaymentFailedEvent paymentFailedEvent) {
+    CancelProductReservationCommand cancelProductReservationCommand =
+        new CancelProductReservationCommand(
+            paymentFailedEvent.getProductId(),
+            paymentFailedEvent.getOrderId(),
+            paymentFailedEvent.getProductQuantity());
+    try {
+      log.info(
+          "Sending CancelProductReservationCommand for : productId {}, orderId: {}, quantity: {}",
+          cancelProductReservationCommand.getProductId(),
+          cancelProductReservationCommand.getOrderId(),
+          cancelProductReservationCommand.getProductQuantity());
+      kafkaTemplate.send(productsCommandTopicName, cancelProductReservationCommand);
+      log.info(
+          "CancelProductReservationCommand sent for orderId: {}, productId: {}, quantity: {}",
+          cancelProductReservationCommand.getOrderId(),
+          cancelProductReservationCommand.getProductId(),
+          cancelProductReservationCommand.getProductQuantity());
+    } catch (Exception e) {
+      log.error(
+          "Failed to send CancelProductReservationCommand for orderId: {}, productId: {}, quantity: {}. Error: {}",
+          cancelProductReservationCommand.getOrderId(),
+          cancelProductReservationCommand.getProductId(),
+          cancelProductReservationCommand.getProductQuantity(),
+          e.getMessage(),
+          e);
+      throw new RuntimeException(e);
+    }
+  }
+
+  @KafkaHandler
+  public void handleEvent(@Payload ProductReservationCancelledEvent event) {
+    RejectOrderCommand rejectOrderCommand = new RejectOrderCommand(event.getOrderId());
+    kafkaTemplate.send(orderCommandsTopicName, rejectOrderCommand);
+    orderHistoryService.add(event.getOrderId(), OrderStatus.REJECTED);
   }
 }
